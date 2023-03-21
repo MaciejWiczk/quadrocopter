@@ -29,32 +29,6 @@ class Radar:
         return (point.x - self.center.x) ** 2 + (point.y - self.center.y) ** 2 <= self.radius**2
 
 
-def _radars_overlap(first_radar: Radar, second_radar: Radar) -> bool:
-    """
-    Checks if one radar range is connected with other radar range.
-    """
-    dist: float = math.sqrt(
-        (first_radar.center.x - second_radar.center.x) ** 2 + (first_radar.center.y - second_radar.center.y) ** 2
-    )
-    if (
-        (dist <= first_radar.radius - second_radar.radius)
-        or (dist <= second_radar.radius - first_radar.radius)
-        or (dist <= first_radar.radius + second_radar.radius)
-    ):
-        return True
-    else:
-        return False
-
-
-def _build_graph(radars: list[Radar]) -> dict[str, list[str]]:
-    graph: dict[str, list[str]] = defaultdict(list)
-    for i, radar in enumerate(radars):
-        for j, _radar in enumerate(radars):
-            if _radars_overlap(first_radar=radar, second_radar=_radar):
-                graph[i].append(j)
-    return graph
-
-
 def check_quadrocopter_route(start: Point, finish: Point, radars: list[Radar]) -> bool:
     """
     Entrypoint for verifying possibility of quadrocopter flight from start to finish.
@@ -71,7 +45,36 @@ def check_quadrocopter_route(start: Point, finish: Point, radars: list[Radar]) -
     )
 
 
+def _radars_overlap(first_radar: Radar, second_radar: Radar) -> bool:
+    """
+    Checks if one radar range is connected with other radar range.
+    """
+    dist: float = math.sqrt(
+        (first_radar.center.x - second_radar.center.x) ** 2 + (first_radar.center.y - second_radar.center.y) ** 2
+    )
+    return (
+        (dist <= first_radar.radius - second_radar.radius)
+        or (dist <= second_radar.radius - first_radar.radius)
+        or (dist <= first_radar.radius + second_radar.radius)
+    )
+
+
+def _build_graph(radars: list[Radar]) -> dict[str, list[str]]:
+    """
+    Builds and returns graph as dictionary with edges as keys and vertices as list of integers.
+    """
+    graph: dict[str, list[str]] = defaultdict(list)
+    for i, radar in enumerate(radars):
+        for j, _radar in enumerate(radars):
+            if _radars_overlap(first_radar=radar, second_radar=_radar):
+                graph[i].append(j)
+    return graph
+
+
 def _path_exists(start: int, finish: int, graph: dict[str, list[str]], path: list[str] = []) -> bool:
+    """
+    Verifies if path from starting to finish point is possible.
+    """
     path = path + [start]
     if start == finish:
         return True
@@ -85,4 +88,7 @@ def _path_exists(start: int, finish: int, graph: dict[str, list[str]], path: lis
 
 
 def _get_radars_covering_point(point: Point, radars: list[Radar]) -> list[int]:
+    """
+    Return radars indexes if point is within range.
+    """
     return [i for i, radar in enumerate(radars) if radar.covers_point(point)]
